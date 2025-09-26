@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Word Poker</title>
-  <link rel="icon" href="logo.png">
+<title>日本語ワードポーカー（47枚）</title>
 <style>
   :root{
     --bg:#0b0f14;
@@ -76,7 +75,7 @@
       radial-gradient(160% 120% at 50% 10%, #17202b 0%, #141a23 45%, #10151d 100%);
     border: 1px solid var(--card-edge);
     border-radius: 16px;
-    aspect-ratio: 2.5/4; 
+    aspect-ratio: 3/6;
     box-shadow: 0 8px 18px rgba(0,0,0,0.5);
     display:flex; align-items:center; justify-content:center;
     color: var(--text);
@@ -197,7 +196,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="title">Word Poker</div>
+      <div class="title">日本語ワードポーカー 47</div>
       <div class="score">
         <div class="pill">ラウンド <span id="round">1</span></div>
         <div class="pill">交換 <span id="swapLeft">1</span></div>
@@ -213,7 +212,7 @@
       <div class="hand" id="hand"></div>
       <div class="hint">カードをタップで<span style="color:#ff93ad;font-weight:800;">交換対象</span>にできる。下の「カード交換」は一回だけ。</div>
       <div class="controls">
-        <button class="btn warn" id="swapBtn">カード交換</button>
+        <button class="btn warn" id="swapBtn">カード交換（選択した枚）</button>
         <button class="btn primary" id="judgeToggle">判定モードに渡す</button>
       </div>
     </section>
@@ -230,7 +229,7 @@
         <div class="word-text" id="wordText"></div>
         <button class="btn primary" id="finishWord">この単語で判定へ</button>
       </div>
-      <div class="hint">カード下の「＋」で単語に追加。追加済みの文字は使用できない。</div>
+      <div class="hint">カード下の「＋」で単語に追加。追加済みの文字はグレーになって押せなくなる。</div>
     </section>
 
     <section class="panel judge" id="judgePanel">
