@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Word Poker</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --panel:#10151d;
+    --accent:#00ffc8;
+    --accent2:#ff3b6e;
+    --card-bg:#141a23;
+    --card-edge:#1f2633;
+    --text:#e8f1ff;
+    --muted:#9fb2c7;
+    --good:#38e8a5;
+    --bad:#ff5370;
+    --shadow: 0 10px 24px rgba(0,0,0,0.45);
+  }
+  html,body{
+    background: radial-gradient(1100px 500px at 50% -10%, #0f1624 0%, #0b0f14 60%, #070a0f 100%);
+    color: var(--text);
+    font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    margin:0; padding:0;
+  }
+  .app{
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 14px 14px 24px;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 10px;
+  }
+  .title{
+    font-weight: 700; letter-spacing: 0.3px;
+    font-size: 18px;
+    color: var(--text);
+  }
+  .score{
+    background: linear-gradient(180deg, #13202e, #0f1a26);
+    border: 1px solid #203042;
+    border-radius: 12px;
+    padding: 8px 12px;
+    display:flex; gap:10px; align-items:center;
+    box-shadow: var(--shadow);
+  }
+  .pill{
+    background: #0c141d; border: 1px solid #1f2e3f;
+    border-radius: 999px; padding: 6px 10px; font-size: 12px; color: var(--muted);
+  }
+  .points{
+    font-weight: 800; font-size: 18px; color: var(--accent);
+    text-shadow: 0 0 8px rgba(0,255,200,0.3);
+  }
+  .panel{
+    background: linear-gradient(180deg, #101722, #0e1420);
+    border: 1px solid #1b2736;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .hand{
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    align-items: stretch;
+  }
+  .card{
+    position: relative;
+    user-select: none;
+    background:
+      radial-gradient(160% 120% at 50% 10%, #17202b 0%, #141a23 45%, #10151d 100%);
+    border: 1px solid var(--card-edge);
+    border-radius: 16px;
+    aspect-ratio: 3/4;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text);
+    font-size: clamp(28px, 9vw, 36px);
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.12);
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    background: conic-gradient(from 160deg at 50% 50%, rgba(0,255,200,0.06), rgba(255,59,110,0.06), rgba(0,255,200,0.06));
+    mix-blend-mode: screen; pointer-events:none;
+  }
+  .card .badge{
+    position:absolute; top:8px; left:8px;
+    font-size: 11px; color: var(--muted);
+    background: #0c141d; border: 1px solid #1f2e3f;
+    border-radius: 999px; padding: 3px 8px;
+  }
+  .card .add{
+    position:absolute; bottom:6px; right:6px;
+    font-size: 10px; color: #091019;
+    background: var(--accent); border: none;
+    border-radius: 999px; padding: 6px 9px;
+    font-weight: 900; letter-spacing: 0.3px;
+    box-shadow: 0 6px 14px rgba(0,255,200,0.35);
+  }
+  .card.selected{
+    outline: 2px solid var(--accent2);
+    box-shadow: 0 0 0 2px var(--accent2), 0 10px 22px rgba(255,59,110,0.35);
+  }
+  .card.disabled{
+    opacity: 0.45; filter: saturate(70%);
+  }
+  .word{
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .word-text{
+    flex:1; min-height: 44px;
+    display:flex; align-items:center; gap: 6px; flex-wrap: wrap;
+    background: #0d151f; border: 1px solid #1c2a3a; border-radius: 10px; padding: 8px 10px;
+  }
+  .letter{
+    background: #13202e; border: 1px solid #26374d;
+    color: #c9e6ff; border-radius: 8px; padding: 6px 10px;
+    font-weight: 800; font-size: 18px;
+  }
+  .controls{
+    display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+  .btn{
+    -webkit-tap-highlight-color: transparent;
+    background: linear-gradient(180deg, #122133, #0e1a29);
+    color: var(--text);
+    border: 1px solid #223347;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700; letter-spacing: 0.2px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn.primary{
+    background: linear-gradient(180deg, #00ffc8, #00d0a6);
+    color: #001b15; border: none; box-shadow: 0 8px 18px rgba(0,255,200,0.35);
+  }
+  .btn.warn{
+    background: linear-gradient(180deg, #ff3b6e, #cc3159);
+    color: #160007; border: none; box-shadow: 0 8px 18px rgba(255,59,110,0.35);
+  }
+  .btn.ghost{
+    background: #0c141d; border: 1px solid #1f2e3f; color: var(--muted);
+  }
+  .hint{
+    font-size: 12px; color: var(--muted);
+    margin-top: 6px;
+  }
+  .judge{
+    display:none; flex-direction: column; gap: 10px; margin-top: 8px;
+  }
+  .judge.active{ display:flex; }
+  .judge-top{
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .judge-word{
+    font-weight: 800; font-size: 22px; letter-spacing: 2px;
+    color: #c9e6ff; text-shadow: 0 0 10px rgba(201,230,255,0.2);
+  }
+  .judge-actions{
+    display:flex; gap: 8px; flex-wrap: wrap;
+  }
+  .role-grid{
+    display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .role{
+    background: #0d151f; border: 1px solid #1f2e3f; color: var(--text);
+    border-radius: 10px; padding: 10px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-weight: 700; font-size: 13px;
+  }
+  .role .pt{ color: var(--accent); font-weight: 800; }
+  .toast{
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    background: #0c141d; border: 1px solid #1f2e3f; color: var(--text);
+    border-radius: 12px; padding: 10px 14px; box-shadow: var(--shadow);
+    font-weight: 700; letter-spacing: 0.2px;
+    display:none;
+  }
+  .toast.show{ display:block; }
+  .row{
+    display:flex; gap: 8px; align-items:center; flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">Word Poker</div>
+      <div class="score">
+        <div class="pill">ラウンド <span id="round">1</span></div>
+        <div class="pill">交換 <span id="swapLeft">1</span></div>
+        <div class="points"><span id="points">0</span>pt</div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="pill">配られたカード（5枚）</div>
+        <button class="btn ghost" id="dealBtn">もう一度配る</button>
+      </div>
+      <div class="hand" id="hand"></div>
+      <div class="hint">カードをタップで<span style="color:#ff93ad;font-weight:800;">交換対象</span>にできる。下の「カード交換」は一回だけ。</div>
+      <div class="controls">
+        <button class="btn warn" id="swapBtn">カード交換</button>
+        <button class="btn primary" id="judgeToggle">判定モードに渡す</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="pill">単語（2〜5文字、同じ文字は2回使えない）</div>
+        <div class="row">
+          <button class="btn ghost" id="clearWord">クリア</button>
+          <button class="btn ghost" id="undoWord">一文字戻す</button>
+        </div>
+      </div>
+      <div class="word">
+        <div class="word-text" id="wordText"></div>
+        <button class="btn primary" id="finishWord">この単語で判定へ</button>
+      </div>
+      <div class="hint">カード下の「＋」で単語に追加。追加済みの文字は使用できない。</div>
+    </section>
+
+    <section class="panel judge" id="judgePanel">
+      <div class="judge-top">
+        <div class="pill">判定者用</div>
+        <div class="judge-word" id="judgeWord">—</div>
+      </div>
+      <div class="judge-actions">
+        <button class="btn" id="okBtn" style="background:linear-gradient(180deg,#38e8a5,#21c589);color:#04140f;border:none;">○ 正しい</button>
+        <button class="btn" id="ngBtn" style="background:linear-gradient(180deg,#ff5370,#d84463);color:#1a0207;border:none;">☓ 間違い</button>
+      </div>
+      <div class="hint">○/☓のあと、役を選んで配点できる（自動判定はしない）。</div>
+      <div class="role-grid" id="roleGrid">
+        <!-- roles injected -->
+      </div>
+      <div class="controls">
+        <button class="btn ghost" id="exitJudge">判定を閉じる</button>
+        <button class="btn primary" id="nextRound">次のラウンドへ</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ======= デッキ（50音順 + 伸ばし棒）=======
+  const KANA_DECK = [
+    "あ","い","う","え","お",
+    "か","き","く","け","こ",
+    "さ","し","す","せ","そ",
+    "た","ち","つ","て","と",
+    "な","に","ぬ","ね","の",
+    "は","ひ","ふ","へ","ほ",
+    "ま","み","む","め","も",
+    "や","ゆ","よ",
+    "ら","り","る","れ","ろ",
+    "わ","を","ん",
+    "ー"
+  ]; // 合計 47
+
+  // ======= 状態 =======
+  let deck = [];
+  let discard = [];
+  let hand = [];
+  let usedChars = new Set(); // 単語に追加済みの文字（同じ文字2回使えない）
+  let word = [];
+  let swapUsed = false;
+  let round = 1;
+  let points = 0;
+  let judgeResult = null; // true/false/null
+
+  // ======= UI =======
+  const handEl = document.getElementById('hand');
+  const wordTextEl = document.getElementById('wordText');
+  const dealBtn = document.getElementById('dealBtn');
+  const swapBtn = document.getElementById('swapBtn');
+  const judgeToggle = document.getElementById('judgeToggle');
+  const clearWordBtn = document.getElementById('clearWord');
+  const undoWordBtn = document.getElementById('undoWord');
+  const finishWordBtn = document.getElementById('finishWord');
+
+  const judgePanel = document.getElementById('judgePanel');
+  const judgeWordEl = document.getElementById('judgeWord');
+  const okBtn = document.getElementById('okBtn');
+  const ngBtn = document.getElementById('ngBtn');
+  const roleGrid = document.getElementById('roleGrid');
+  const exitJudgeBtn = document.getElementById('exitJudge');
+  const nextRoundBtn = document.getElementById('nextRound');
+
+  const roundEl = document.getElementById('round');
+  const swapLeftEl = document.getElementById('swapLeft');
+  const pointsEl = document.getElementById('points');
+  const toastEl = document.getElementById('toast');
+
+  // 役と配点（手動選択用）
+  const ROLES = [
+    {label:"ワンペア", pt:1},
+    {label:"ツーペア", pt:2},
+    {label:"スリーカード", pt:3},
+    {label:"フルハウス", pt:4},
+    {label:"フォーカード", pt:5},
+    {label:"ファイブカード", pt:6},
+  ];
+
+  // ======= ユーティリティ =======
+  const shuffle = (arr) => {
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const toast = (msg) => {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=>toastEl.classList.remove('show'), 1400);
+  };
+
+  // ======= デッキ操作 =======
+  const initDeck = () => {
+    deck = shuffle(KANA_DECK);
+    discard = [];
+  };
+  const drawCard = () => {
+    if(deck.length === 0){
+      // 捨て札を戻してシャッフル（重複はないまま）
+      deck = shuffle(discard);
+      discard = [];
+    }
+    return deck.shift();
+  };
+  const deal = () => {
+    usedChars.clear();
+    word = [];
+    judgeResult = null;
+    swapUsed = false;
+    updateHUD();
+
+    // デッキから重複なしで5枚
+    const need = 5;
+    hand = [];
+    const pool = new Set();
+    while(hand.length < need){
+      const c = drawCard();
+      if(!pool.has(c)){
+        hand.push({char:c, selected:false, disabled:false});
+        pool.add(c);
+      } else {
+        // かぶってたら山札の下に捨てて引き直し
+        discard.push(c);
+      }
+    }
+    renderHand();
+    renderWord();
+    judgePanel.classList.remove('active');
+    judgeWordEl.textContent = "—";
+  };
+
+  // ======= レンダリング =======
+  const renderHand = () => {
+    handEl.innerHTML = '';
+    hand.forEach((card, idx) => {
+      const el = document.createElement('div');
+      el.className = 'card' + (card.selected ? ' selected':'') + (card.disabled ? ' disabled':'');
+      el.innerHTML = `
+        <div class="badge">${idx+1}</div>
+        <div class="face">${card.char}</div>
+        <button class="add">＋</button>
+      `;
+      // 交換選択 toggle
+      el.addEventListener('click', (e)=>{
+        // ボタン以外のクリックは選択トグル
+        if(e.target && e.target.classList.contains('add')) return;
+        // 追加済みの文字は選択できる（交換はOK）けど、判定進行中はロック
+        if(judgePanel.classList.contains('active')) return;
+        card.selected = !card.selected;
+        renderHand();
+      });
+      // 単語追加
+      el.querySelector('.add').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(card.disabled) return;
+        if(judgePanel.classList.contains('active')){
+          toast("判定中は編集不可");
+          return;
+        }
+        if(word.length >= 5){
+          toast("最大5文字まで");
+          return;
+        }
+        if(usedChars.has(card.char)){
+          toast("同じ文字は2回使えない");
+          return;
+        }
+        word.push(card.char);
+        usedChars.add(card.char);
+        card.disabled = true; // 追加済みはグレー＆押せない
+        renderWord();
+        renderHand();
+      });
+      handEl.appendChild(el);
+    });
+  };
+
+  const renderWord = () => {
+    wordTextEl.innerHTML = '';
+    word.forEach((ch, i)=>{
+      const chip = document.createElement('div');
+      chip.className = 'letter';
+      chip.textContent = ch;
+      wordTextEl.appendChild(chip);
+    });
+  };
+
+  const updateHUD = () => {
+    roundEl.textContent = String(round);
+    swapLeftEl.textContent = swapUsed ? "0" : "1";
+    pointsEl.textContent = String(points);
+  };
+
+  // ======= 交換 =======
+  const swapSelected = () => {
+    if(swapUsed){
+      toast("交換は一回だけ");
+      return;
+    }
+    const targets = hand.map((c,i)=>({c,i})).filter(x=>x.c.selected);
+    if(targets.length === 0){
+      toast("交換対象を選んでね");
+      return;
+    }
+    targets.forEach(t=>{
+      // 交換に出したカードは捨て札へ
+      discard.push(t.c.char);
+      // 新しいカードを引く（重複しないように）
+      let newC;
+      const currentChars = new Set(hand.map(h=>h.char));
+      currentChars.delete(t.c.char); // この枠は置き換えるので除く
+      do {
+        newC = drawCard();
+        // 被ってたら捨て札へ
+        if(currentChars.has(newC)){
+          discard.push(newC);
+          newC = null;
+        }
+      } while(!newC);
+      hand[t.i] = {char:newC, selected:false, disabled: usedChars.has(newC)}; // 既に単語で使ってる文字は押せなくする
+    });
+    swapUsed = true;
+    updateHUD();
+    renderHand();
+    toast("交換完了！");
+  };
+
+  // ======= 判定 UI =======
+  const buildRoleButtons = () => {
+    roleGrid.innerHTML = '';
+    ROLES.forEach(role=>{
+      const btn = document.createElement('button');
+      btn.className = 'role';
+      btn.innerHTML = `<span>${role.label}</span><span class="pt">+${role.pt}pt</span>`;
+      btn.addEventListener('click', ()=>{
+        if(judgeResult !== true){
+          toast("まず○で正しさを決めて");
+          return;
+        }
+        points += role.pt;
+        updateHUD();
+        toast(`${role.label} で +${role.pt}pt`);
+      });
+      roleGrid.appendChild(btn);
+    });
+  };
+
+  // ======= イベント =======
+  dealBtn.addEventListener('click', ()=>{
+    deal();
+    toast("新しく配ったよ");
+  });
+  swapBtn.addEventListener('click', swapSelected);
+  judgeToggle.addEventListener('click', ()=>{
+    judgePanel.classList.add('active');
+    judgeWordEl.textContent = word.length ? word.join('') : "—";
+  });
+  clearWordBtn.addEventListener('click', ()=>{
+    if(judgePanel.classList.contains('active')){ toast("判定中は編集不可"); return; }
+    // 使用解除
+    word.forEach(ch => usedChars.delete(ch));
+    word = [];
+    hand.forEach(h => h.disabled = false);
+    renderWord(); renderHand();
+  });
+  undoWordBtn.addEventListener('click', ()=>{
+    if(judgePanel.classList.contains('active')){ toast("判定中は編集不可"); return; }
+    if(word.length === 0) return;
+    const last = word.pop();
+    usedChars.delete(last);
+    // 手札内の同文字を押せるように戻す
+    hand.forEach(h => { if(h.char === last) h.disabled = false; });
+    renderWord(); renderHand();
+  });
+  finishWordBtn.addEventListener('click', ()=>{
+    if(word.length < 2){
+      toast("最低2文字にして");
+      return;
+    }
+    judgePanel.classList.add('active');
+    judgeWordEl.textContent = word.join('');
+  });
+
+  okBtn.addEventListener('click', ()=>{
+    if(word.length < 2){ toast("2文字以上で判定して"); return; }
+    judgeResult = true;
+    toast("○ 正しい単語");
+  });
+  ngBtn.addEventListener('click', ()=>{
+    judgeResult = false;
+    toast("☓ 間違い：配点なし");
+  });
+  exitJudgeBtn.addEventListener('click', ()=>{
+    judgePanel.classList.remove('active');
+  });
+  nextRoundBtn.addEventListener('click', ()=>{
+    round += 1;
+    deal();
+  });
+
+  // 初期化
+  buildRoleButtons();
+  initDeck();
+  deal();
+</script>
+</body>
+</html>
